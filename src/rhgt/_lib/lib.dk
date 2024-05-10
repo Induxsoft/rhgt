@@ -1,0 +1,153 @@
+#include "dkli.dkh"
+#pattern function "function '$name' ()"
+#!
+module "lib.dk:lib"
+{
+    function hoy(fmt)
+    {
+        return date_str(now(),str(fmt))
+    }
+     function list_years(yearsBack,yearsForward)
+    {
+        ndt = ndatetime.now()
+        yearFrom = ndatetime.add(ndt, ((yearsBack + 1) * -1), "y")
+        
+        ref list = list.create()
+        date = yearFrom
+
+        for i = 1; i < yearsBack + (yearsForward + 2)
+        {
+            date = ndatetime.add(date,1,'y')
+            do list.add(list, ndatetime.year(date))
+        }
+        return list
+    }
+    function date_format(str,fmt)
+    {
+        fecha = trim(str(str))
+        formato = trim(str(fmt))
+
+        if fecha == "" { return "" }
+        if formato == "" { formato = "yyyy-MM-ddTHH:mm:ss" }
+
+        ref datetime = str2dt(fecha)
+        fecha = date_str(datetime,formato)
+
+        return fecha
+
+        exception
+        {
+            // do rise_error(99,"Debe proporcionar una cadena de fecha con un formato válido.")
+            do clear_exceptions()
+            return ""
+        }
+    }
+
+    function _post_get()
+    {
+        if not(isset("@http_context")) && isset("@crud_context") { ref @http_context = ifnull(@@(@crud_context,"&http"),record.create()) }
+
+        ref @_GET = ifnull(@@(@http_context,"&request/get"),record.create())
+        ref @_POST = ifnull(@@(@http_context,"&request/post"),record.create())
+        
+        if list.count(list.create_from_fields(@_POST)) < 1 {
+			ref @_POST = from.json(field.dstr(@http_context,"request/post_string","{}"))
+		}
+    }
+
+    function form(name,type,&obj)
+    {
+        name = trim(str(name))
+        if isnull(obj) { new obj {} }
+
+        switch str(type)
+        {
+            case "tx"
+            {
+                text = trim(@("$input/"+name))
+                if text == "" { text = trim(@("$./form/"+name)) }
+                if text == "" { text = trim(@@(obj,"$"+name)) }
+                return text
+            }
+            case "nm"
+            {
+                value = @("#input/"+name)
+                if value <= 0 { value = @("#./form/"+name) }
+                if value <= 0 { value = @@(obj,"#"+name) }
+                return value
+            }
+            case "ch"
+            {
+                bool = trim(@("$input/"+name))
+                if bool == "" { bool = trim(@("$./form/"+name)) }
+                if bool == "" { bool = trim(@@(obj,"$"+name)) }
+                
+                return ifstr(parse.bool(bool),"checked","")
+            }
+            case "rd"
+            {
+                bool = trim(@("$input/"+name))
+                if bool == "" { bool = trim(@("$./form/"+name)) }
+                if bool == "" { bool = trim(@@(obj,"$"+name)) }
+                
+                return ifstr(parse.bool(bool),"checked","")
+            }
+            case "dt"
+            {
+                fecha = trim(@("$input/"+name))
+                if fecha == "" { fecha = trim(@("$./form/"+name)) }
+                if fecha == "" { fecha = trim(@@(obj,"$"+name)) }
+                if fecha == "" { fecha = date_str(now(),"yyyy-MM-dd") }
+                return fecha
+            }
+            default { return "" }
+        }
+    }
+
+    function get_idivisa_predeterminada()
+    {
+        ref db = crudl.database()
+
+        if not(isset("@IDIVISA_PREDETERMINADA")) { @IDIVISA_PREDETERMINADA = 0 }
+        if @IDIVISA_PREDETERMINADA <= 0 { @IDIVISA_PREDETERMINADA = parse.num(dbr.vars.get(db,"FXCA013")) }
+        if @IDIVISA_PREDETERMINADA <= 0 { @IDIVISA_PREDETERMINADA = 1 }
+        
+        return @IDIVISA_PREDETERMINADA
+    }
+
+    function new_rec()
+    {
+        new record
+        {
+            @"sys_pk": 0
+            @"sys_guid": uuid()
+            @"sys_dtcreated*": now()
+            @"sys_timestamp*": now()
+            // @"sys_info": ""
+            // @"sys_user": ""
+            // @"sys_lastuser": ""
+            // @"sys_exported": @false
+            // @"sys_dtexported*": @null
+            @"sys_recver": 0
+            // @"sys_deleted": @false
+            // @"sys_lock": 0
+        }
+        return record
+    }
+
+    function get_header_json()
+    {
+        new h { @"Content-Type": "application/json; charset=utf-8;" }
+        return h
+    }
+    
+    function get_current_year()
+    {
+        NOW = NDATETIME.NOW()
+        return NDATETIME.YEAR(NOW)
+    }
+    limpiarTexto::texto
+	{
+		return tolower(trim(replace(ranychars(texto,'$,/\n)("\'[]-%+/',' ')," ","_")))
+	}
+}

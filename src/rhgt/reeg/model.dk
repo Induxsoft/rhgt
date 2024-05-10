@@ -1,0 +1,285 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "../_lib/lib.dk"
+    #include "efectivo/movimientos.dkh"
+
+    @table_name="rhgf_ree"
+    @list_query="SELECT r.sys_pk,CONCAT_WS(' ',e.nombre,e.apellido1,e.apellido2)empleado,DATE_FORMAT(r.f_solicitud,'%Y-%m-%d')fecha_solicitud,
+    r.concepto,rs.const 'status',r.concepto,r.importe_solicitado,r.importe_aprobado
+    FROM rhgf_ree r
+    INNER JOIN rh_empleado_org e ON r.ref_empleado=e.sys_pk
+    INNER JOIN rhgf_ree_status rs ON r.`status`=rs.id
+    where true
+    and if(ifnull(@sts,'*')='*',true,rs.id=@sts)
+    and if(ifnull(@fstart,'')='' or ifnull(@fend,'')='',true, date(r.f_solicitud) between date(@fstart) and date(@fend) )
+    ORDER BY r.sys_pk desc
+    limit #<@LIMIT_ROWS>"
+
+    @read_query="SELECT r.*,st.const 'estado' FROM rhgf_ree r
+    INNER JOIN rhgf_ree_status st ON r.`status`=st.id
+    WHERE r.sys_pk=@_entity_id limit 1"
+
+    prepareView::&db,&params,&entity
+    {
+        using params
+        {
+            @"emp":@@(entity,"#ref_empleado")
+            @"reeg":@@(entity,"#sys_pk")
+        }   
+        if @@(params,"#list")
+        {
+            using entity
+            {
+                @"status*":dbr.list(db,"select id sys_pk , const descripcion from rhgf_ree_status",@null)
+            }
+        }
+        else 
+        {
+            ref adjuntos=getFiles(@@(entity,"$sys_guid"))
+            using entity
+            {
+                @"empleado*":dbr.rec(db,"select *,concat_ws(' ',nombre,apellido1,apellido1)name_completo from rh_empleado_org where sys_pk=@emp",params)
+                @"bitacora*":dbr.list(db,"select DATE_FORMAT(r.sys_dtcreated,'%Y-%m-%d %H:%i:%s')fecha,nota,usuario,t.username
+                                from rhgf_ree_bit r
+                                INNER JOIN tuser t ON r.usuario=t.userid where ref_ree=@reeg",params)
+                @"adjuntos*":adjuntos
+            }
+
+            if @@(params,"$_view")!=""
+            {
+                sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
+                entity<"cuentas*"> : dbr.list(db,sql,@null)
+                sql = "SELECT sys_pk,descripcion FROM categoria WHERE tipo = 2 AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
+                entity<"categorias*"> : dbr.list(db,sql,@null)
+                sql = "SELECT doc.id,doc.const FROM cdocumentos doc INNER JOIN cfg_chq_docs cfg ON cfg.documento = doc.id WHERE IFNULL(cfg.retiros,0) ORDER BY doc.id;"
+                entity<"documentos*"> : dbr.list(db,sql,@null)
+                break
+            }
+        }
+        
+    }
+    save_file::&db,&params
+    {
+        ref data=dbr.rec(db,"select * from rhgf_ree where sys_pk=@_entity_id",params)
+
+        sys_guid=@@(data,"$sys_guid")
+        if trim(sys_guid)==""{sys_guid="temp_"+@@(params,"$sys_guid")}
+        if trim(@@(data,"$sys_guid"))=="" && trim(@@(params,"$sys_guid"))==""{do rise_error(500,"No se encontró datos del reeg indicado")}
+
+        path=path.concat(@PATH_FILES_REEG,sys_guid)
+        do dir.ensure(path)
+
+        ref files=@@(@http_context,"&request/files")
+
+        for i = 0; i < @count(files)
+        {
+            ref file=@item(files,i)
+            filename=limpiarTexto(@@(file,"$filename"))
+            path_file=path.concat(path,filename)
+            do file.copy(@@(file,"$temp_file"),path_file)
+        }
+
+       return getFiles(sys_guid)
+    }
+    copy_files::tmp_sys_guid,sys_guid
+    {
+        path_org=path.concat(@PATH_FILES_REEG,"temp_"+tmp_sys_guid)
+        path_dest=path.concat(@PATH_FILES_REEG,sys_guid)
+
+        if not(dir.exists(path_org)){return}
+
+        do dir.ensure(path_dest)
+
+        ref files=list.files(path_org,"*")
+
+        for i = 0; i < @count(files)
+        {
+            file=list.str(files,i)
+            filename=file.name(file)
+
+            path_file=path.concat(path_dest,filename)
+            do file.copy(file,path_file)
+            do file.delete(file)
+        }
+        do dir.delete(path_org)
+    }
+    getFiles::sys_guid
+    {
+        path=path.concat(@PATH_FILES_REEG,sys_guid)
+        ref l=list.create()
+
+        if not(dir.exists(path)){return l}
+
+        url_files=path.concat(@URL_FILES_REEG,sys_guid)
+        ref files=list.files(path,"*")
+        for i = 0; i < @count(files)
+        {
+            f=list.str(files,i)
+            filename=file.name(f)
+            url_file=path.concat(url_files,filename)
+            new rc
+            {
+                @"url":url_file
+                @"mini":url_file
+                @"name":filename
+            }
+            do list.add(l,rc)
+        }
+
+        return l
+    }
+    saveBitacora::&db,&params,&data
+    {
+        do field.remove(data,"bit")
+
+        data<"ref_ree">:@@(params,"$_entity_id")
+        data<"usuario">:@@(@http_context,"$session/user/uid")
+
+        do dbr.save(db,"rhgf_ree_bit",data)
+
+        @url_redir=replace(@REEG_ADD_EDIT,"{id}",@@(params,"$_entity_id"))
+
+        return read(db,params)
+    }
+    save::&db,&params,&data
+    {
+        if @@(params,"$_view")!=""
+        {
+            do dbr.begin(db)
+                movcuenta= erp.efectivo.movimientos.retiro(db,data)
+                ref reeg=dbr.rec(db,"select * from rhgf_ree where sys_pk=@_entity_id",params)
+
+                new ndata
+                {
+                    @"sys_pk":@@(reeg,"#sys_pk")
+                    @"sys_recver":@@(reeg,"#sys_recver")
+                    @"status":@REEG_PAGAR
+                    @"ref_movcta":movcuenta
+                }
+                if @@(reeg,"#importe_aprobado")<1{ndata<"importe_aprobado">:@@(data,"#importe")}
+                
+                do dbr.save(db,"rhgf_ree",ndata)
+            do dbr.commit(db)
+
+            return @null
+   
+        }
+        if parse.bool(@@(data,"$upload"))
+        {
+            params<"sys_guid">:@@(data,"$sys_guid")
+            ref lf= save_file(db,params)
+            return lf
+        }
+
+        if @@(data,"#bit")>0
+        {
+            return saveBitacora(db,params,data)
+        }
+        ref entity=@null
+    
+        if @@(params,"$_entity_id")!="_new"
+        {
+            motivo=@@(data,"$motivo")
+            if @@(data,"#status")>0
+            {
+                status=@@(data,"#status")
+                sys_recver=@@(data,"#sys_recver")
+                importe_aprobado=@@(data,"#importe_aprobado")
+                if importe_aprobado<1 && @@(data,"#status")==@REEG_APROBAR{do rise_error(500,"El importe aprobado debe ser mayor a 0")}
+
+                new data
+                {
+                    @"status":status
+                    @"sys_recver":sys_recver
+                    @"sys_pk":@@(params,"#_entity_id")
+                }
+                if status==@REEG_APROBAR{data<"importe_aprobado">:importe_aprobado}
+            }
+            if trim(motivo)!=""
+            {
+                new dt{@"nota":motivo}
+                do saveBitacora(db,params,dt)
+                do field.remove(data,"motivo")
+            }
+            ref entity= entity.update(db,params,data)
+        } 
+        else
+        {
+            if @@(data,"$f_solicitud")==""{data<"f_solicitud*">:now()}
+            data<"status">:@REEG_POR_APROBAR
+            importe_solicitado=@@(data,"#importe_solicitado")
+            if trim(@@(data,"$hoja"))!=""
+            {
+                ref json=from.json(@@(data,"$hoja"))
+                importe=0
+
+                for i = 0; i < @count(json)
+                {
+                    ref itm=@item(json,i)
+                    importe=importe + @@(itm,"#importe")
+                }
+                if importe_solicitado!=importe && @count(json)>0{do rise_error(500,"Importe solicitado es diferente a la suma de los importe de la tabla")}
+            }
+            tmp_sys_guid=@@(data,"$tmp_sys_guid")
+            do field.remove(data,"tmp_sys_guid")
+            ref entity=entity.create(db,params,data)
+
+            do copy_files(tmp_sys_guid,@@(entity,"$sys_guid"))
+        }
+        
+        @url_redir=replace(@REEG_ADD_EDIT,"{id}",@@(entity,"$sys_pk"))
+
+        return entity
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+
+            error=last_error()
+            if @@(params,"$_entity_id")!="_new"
+            {
+                ref data:read(db,params)
+            }
+            else 
+            {
+                do prepareView(db,params,data)
+            }
+            do rise_error(500,error)
+        }
+    }
+    read::&db,&params
+    {
+        ref entity= entity.read(db,params)
+        do prepareView(db,params,entity)
+       return entity
+    }
+    list::&db,&params
+    {
+        if not(field.exist(params,"sts")){params<"sts">:@REEG_POR_APROBAR}
+        if not(field.exist(params,"fstart")){params<"fstart">:dbr.str(db,"select DATE_FORMAT(DATE_ADD(NOW(),INTERVAL "+@DAY_FILTER_DEFAULT+" DAY),'%Y-%m-%d')",@null)}
+        if not(field.exist(params,"fend")){params<"fend">:date_str(now(),"yyyy-MM-dd")}
+
+        new entity
+        {
+            @"data*":entity.list(db,params)
+        }
+        params<"list">:@true
+       do prepareView(db,params,entity)
+       return entity
+    }
+    blank::&db,&params
+    {
+      new entity{@"sys_guid_tmp":uuid()}
+      return entity
+    }
+    
+    point @blank to blank
+    point @list to list
+    point @read to read
+    point @create to save
+    point @update to save
+
+    
+}

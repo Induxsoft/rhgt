@@ -1,0 +1,19 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "../config.dk"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+
+
+    
+    #$
+    div
+    {
+        button(class="btn btn-secondary"){"Configuración de cuentas"}
+        button(class="btn btn-secondary"){"Configuración de categorías"}
+    }
+}

@@ -1,0 +1,17 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+
+    @table_name="rhgf_ree_cfg_ctas"
+    
+    list::&db,&params
+    {
+       ref entity= entity.list(db,params)
+       return entity
+    }
+    
+    point @list to list
+}

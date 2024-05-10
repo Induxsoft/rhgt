@@ -1,0 +1,6 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    @table_name="rhgf_ree_cfg_cat"
+}

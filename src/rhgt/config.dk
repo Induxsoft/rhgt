@@ -1,0 +1,46 @@
+#include "dkli.dkh"
+#!
+module "config"
+{
+    @PACK="rhgt"
+    @REEG="/!/"+@PACK+"/reeg/"
+    @REEG_ADD_EDIT="/!/"+@PACK+"/reeg/{id}/"
+    @LIMIT_ROWS = 200
+
+    @REEG_CONFIG="/!/"+@PACK+"/rhgt_config/"
+    //#region empleados
+    @JS_EMPLEADOS = "/$/rhgf/js/empleados.js"
+    @URL_BUSCAR_EMPLEADO = "/!/rhgf/empleados/?_view=buscar-empleado&search=@search"
+    @RH_EMPLEADOS = "/!/rhgf/empleados/"
+
+    //path static
+    @PATH_STATIC=@PACK + "/_static/"
+    @PATH_FILES_REEG=@PATH_STATIC + "reeg/"
+
+    @curr_ndt = ndatetime.now()
+    @curr_year = ndatetime.year(@curr_ndt)
+    @curr_month = ndatetime.month(@curr_ndt)
+    @curr_day = ndatetime.day(@curr_ndt)
+
+    //URLS FILES
+    @URL_FILES_REEG="/$/"+@PACK+"/reeg/"
+
+    @icon_color = "#888"
+
+    //status reeg
+    @REEG_POR_APROBAR = 0  
+    @REEG_RECHAZAR= 9
+    @REEG_APROBAR = 10
+    @REEG_PAGAR = 20
+    @REEG_CANCELAR = 99
+
+    //DIAS DE FILTRO REEG
+    @DAY_FILTER_DEFAULT="-30"
+    
+    // 0-Por aprobar
+    // 9-Rechazada
+    // 10-Aprobada
+    // 20-Pagada
+    // 99-Cancelada
+
+}

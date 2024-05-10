@@ -1,0 +1,269 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "../config.dk"
+	#include "../_lib/icons.dk"
+    #include "../_lib/lib.dk"
+
+    #include "uielements.dkl"
+    #include "efectivo/_lib/icons.dk"
+    #include "efectivo/_lib/config.dk"
+    #include "efectivo/_lib/lib.dk"
+    #include "efectivo/movcuenta/html.selects.dk"
+
+    do @context.begin(@crud_context)
+    url_exit=replace(@REEG_ADD_EDIT,"{id}",@("$./sys_pk"))
+
+    ref empleado=@("&./empleado")
+
+    buttons::
+    {
+        #$
+        button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"#<@ICON_SAVE>"}
+        #!
+    }
+    point buttons to buttons
+
+    new cmpreq{}
+    new dt_unidad_org{}
+    new dt_partida_pre{}
+    new sel_periodo
+    {
+        @"datatable*": from.json('[
+            {"id":"1","const":"Enero"},
+            {"id":"2","const":"Febrero"},
+            {"id":"3","const":"Marzo"},
+            {"id":"4","const":"Abril"},
+            {"id":"5","const":"Mayo"},
+            {"id":"6","const":"Junio"},
+            {"id":"7","const":"Julio"},
+            {"id":"8","const":"Agosto"},
+            {"id":"9","const":"Septiembre"},
+            {"id":"10","const":"Octubre"},
+            {"id":"11","const":"Noviembre"},
+            {"id":"12","const":"Diciembre"},
+            {"id":"13","const":"Extraordinario"},
+        ]')
+        @"id": "sel_periodo"
+        new member "attributes"
+        {
+            @"class": "form-select form-select-sm rounded-0"
+            @"name": "periodo"
+        }
+        @"value_field": "id"
+        @"text_field": "const"
+        @"selected": lib.form('periodo','nm',cmpreq)
+    }
+    #$
+    div(class="container")
+    {
+        
+        div(id="work_area" class="container-section")
+        {
+            #! if @('$error/message')!=""
+            {
+                #$ div(class="alert alert-danger"){$"#<@('$error/message')>"}
+            }
+            
+
+            form(action="." method="POST" id="form_retiro")
+            {
+                #!
+                do uie.printMainBar(buttons,"Pagar",@false,url_exit)
+                #$
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-6")
+                    {
+                        small(class="form-label fw-bold" "for"="sel_cuenta"){$"Cuenta:"}
+                        ##
+                        do listarCuentas()
+                        ##
+                    }
+                    div(class="col-12 col-sm-6")
+                    {
+                        small(class="form-label" "for"="txt_beneficiario"){$"Beneficiario:"}
+                        input(type="text" class="induxsoft-form-control" readonly="true" name="beneficiario" id="txt_beneficiario" value="#<@@(empleado,'$name_completo')>")
+                    }
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-3")
+                    {
+                        small(class="form-label fw-bold" "for"="sel_categoria"){$"Categoría:"}
+                        ##
+                        do listarCategorias()
+                        ##
+                    }
+                    div(class="col-12 col-sm-3")
+                    {
+                        small(class="form-label fw-bold" "for"="sel_documento"){$"Documento:"}
+                        ##
+                        do listarTiposDocumentos()
+                        ##
+                    }
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-6")
+                    {
+                        small(class="form-label fw-bold" "for"="txt_referencia"){$"Referencia:"}
+                        input(type="text" class="induxsoft-form-control" readonly="true" name="referencia" id="txt_referencia" value="#<@('$./sys_guid')>" required="")
+                    }
+                    div(class="col-12 col-sm-3")
+                    {
+                        small(class="form-label" "for"="txt_fecha"){$"Fecha:"}
+                        input(type="date" class="induxsoft-form-control" name="fecha" id="txt_fecha" value="#<form('fecha','dt',@null)>" required="")
+                    }
+                    div(class="col-12 col-sm-3")
+                    {
+                        small(class="form-label" "for"="txt_aplicacion"){$"Fecha de aplicación:"}
+                        input(type="date" class="induxsoft-form-control" name="faplicacion" id="txt_aplicacion" value="#<form('faplicacion','dt',@null)>" required="")
+                    }
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-3")
+                    {
+                        small(class="form-label" "for"="txt_importe"){$"Importe:"}
+                        input(type="number" class="induxsoft-form-control" "#<ifstr(@('#./importe_aprobado')!=0,'readonly','')>"="true" name="importe"  min="1" step="0.000001" id="txt_importe" value="#<@('#./importe_aprobado')>" required="")
+                    }
+                }
+
+                small(class="form-label fw-bold" "for"="txt_concepto"){$"Concepto:"}
+                textarea(class="induxsoft-form-control" name="concepto" id="txt_concepto" readonly="true" required=""){ $"#<@('$./concepto')>" }
+
+                // div(class="form-check mt-2") {
+                //     input(class="form-check-input" type="checkbox" name="conciliado" id="ch_conciliado" checked="checked")
+                //     small(class="form-check-label" "for"="ch_conciliado"){$"Conciliado"}
+                // }
+                hr{}
+                // form(method="POST" action="./?cmpreq_type=#<@type_req_gop>" id="form-new-cmpreq")
+                div
+                {
+                    // input(type="hidden" name="sys_pk" value="#<@@(cmpreq,'#sys_pk')>")
+                    // input(type="hidden" name="sys_recver" value="#<@@(cmpreq, '#sys_recver')>")
+                    // input(type="hidden" name="tipo" value="#<@type_req_gop>")
+
+                    div(class="row")
+                    {
+                        div(class="col-md-12")
+                        {
+                            div(class="row gx-2")
+                            {
+                                div(class="col-md-8")
+                                {
+                                    label(class="form-label" "for"="ik_unidad_org"){$"Unidad organizacional:"}
+                                    "input-key"(name="unidad_org" id="ik_unidad_org" required="true" "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" 
+                                        "data-value"="#<to.json(dt_unidad_org)>" "data-source"="#<@URL_BUSCAR_UNIDAD_ORG>" columns="codigo,descripcion" colcaptions="Código,Descripción"
+                                        "control-styles"="
+                                            #input_search_container, #input_description_container,
+                                            #button_search_container, #button_clear_container {
+                                                height: calc(1.5em + .5rem + 2px) !important;
+                                                padding: .25rem .5rem !important;
+                                                font-size: .875rem !important;
+                                            }
+                                        "
+                                    ){$""}
+                                }
+
+                                div(class="col-md-4")
+                                {
+                                    label(class="form-label" "for"="sel_ejercicio"){$"Ejercicio:"}
+                                    select(class="form-select form-select-sm rounded-0" name="ejercicio" id="sel_ejercicio" required="true")
+                                    {$""
+                                        #!
+                                        syear = lib.form('ejercicio','nm',cmpreq)
+                                        if syear == 0 { syear = @curr_year }
+
+                                        ref list_ejercicios = lib.list_years(10,5)
+                                        for i = 0; i < list.count(list_ejercicios)
+                                        {
+                                            year = list.num(list_ejercicios,i)
+                                            #$ option(value="#<year>" "#<ifstr(syear == year,'selected','')>"=""){$"#<year>"}
+                                        }
+                                    }
+                                }
+
+                                div(class="col-md-8")
+                                {
+                                    label(class="form-label" "for"="ik_partida_pre"){$"Partida presupuestal:"}
+                                    "input-key"(name="partida" id="ik_partida_pre" required="true" "data-key"="sys_pk" "data-search"="id" "data-text"="partida"
+                                        "data-value"="#<to.json(dt_partida_pre)>" "data-source"="#<@URL_BUSCAR_PARTIDA_PRE>" columns="id,partida" colcaptions="Id,Partida"
+                                        "control-styles"="
+                                            #input_search_container, #input_description_container,
+                                            #button_search_container, #button_clear_container {
+                                                height: calc(1.5em + .5rem + 2px) !important;
+                                                padding: .25rem .5rem !important;
+                                                font-size: .875rem !important;
+                                            }
+                                        "
+                                    ){$""}
+                                }
+
+                                div(class="col-md-4")
+                                {
+                                    label(class="form-label" "for"="sel_periodo"){$"Periodo:"}
+                                    ##
+                                    do uie.dbSelect(sel_periodo)
+                                    ##
+                                }
+
+                                // div(class="col-lg-4 col-md-4 col-sm-4")
+                                // {
+                                //     label(class="form-label" "for"="txt_referencia"){$"Referencia:"}
+                                //     div(class="input-group input-group-sm")
+                                //     {
+                                //         ##
+                                //         do uie.dbSelect(sel_serie)
+                                //         ##
+                                //         input(class="form-control form-control-sm rounded-0 text-end" type="number" name="folio" value="#<lib.form('folio','num',cmpreq)>" id="txt_folio" min="1" step="1" placeholder="<A>")
+                                //         button(class="btn btn-light btn-sm rounded-0 border" type="button" id="btn_get_folio" title="Obtener folio disponible para la serie seleccionada"){$"#<@ICON_HDOTS>"}
+                                //     }
+                                // }
+
+                                // div(class="col-lg-4 col-md-4 col-sm-4")
+                                // {
+                                //     label(class="form-label" "for"="txt_fecha"){$"Elaboración:"}
+                                //     input(class="form-control form-control-sm rounded-0" type="date" name="fecha" value="#<lib.form('fecha','dt',cmpreq)>" id="txt_fecha" required="" title="Fecha formal de elaboración")
+                                // }
+
+                                // div(class="col-lg-4 col-md-4 col-sm-4")
+                                // {
+                                //     label(class="form-label" "for"="txt_flimite"){$"Vencimiento:"}
+                                //     input(class="form-control form-control-sm rounded-0" type="date" name="flimite" value="#<lib.form('flimite','dt',cmpreq)>" id="txt_flimite" title="Fecha y hora límite para completarla")
+                                // }
+
+                                // div(class="col-lg-4 col-md-4 col-sm-4")
+                                // {
+                                //     label(class="form-label" "for"="txt_divisa"){$"Divisa:"}
+                                //     ##
+                                //     do uie.dbSelect(sel_divisa)
+                                //     ##
+                                // }
+
+                                // div(class="col-lg-4 col-md-4 col-sm-4")
+                                // {
+                                //     label(class="form-label" "for"="txt_tcambio"){$"T.Cambio:"}
+                                //     input(class="form-control form-control-sm rounded-0 induxsoft-num-field mw-100" type="number" name="tcambio" value="#<lib.form('tcambio','nm',cmpreq)>" id="txt_tcambio" min="1" max="999999.999999" step="0.000001" required="" "num-decs"="6")
+                                // }
+
+                                // div(class="col-lg-4 col-md-4 col-sm-4")
+                                // {
+                                //     label(class="form-label" "for"="txt_status"){$"Estado:"}
+                                //     ##
+                                //     do uie.dbSelect(sel_status)
+                                //     ##
+                                // }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

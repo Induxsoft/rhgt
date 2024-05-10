@@ -1,0 +1,135 @@
+#include "dkli.dkh"
+#!
+module "list"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "../config.dk"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+
+    do @context.begin(@crud_context)
+    new status
+	{
+		@"datatable*":@("&./status")
+		@"id":"sts"
+        member "attributes"
+        {
+            @"class":"induxsoft-form-select m-1"
+            @"name":"sts"
+            
+        }
+        @"value_field":"sys_pk"
+        @"text_field":"descripcion"
+        @"selected":@('$parameters/sts')
+        @"first_value":"*"
+        @"first_text":"Todos(*)"
+	}
+
+    url_edit=replace(@REEG_ADD_EDIT,"{id}","${DataRow.sys_pk}")
+    ref data = @("&./data")
+    new table
+    {
+        @"datatable*":data
+        @"leyend":"Mostrando las primeras # filas "
+        @"auto-confirm":"true"
+        member @"columns"
+        {
+            member @"fecha_solicitud"{@"caption":"Fecha solicitud"}
+            member @"empleado"{@"caption":"Empleado"}
+            member @"status"{@"caption":"Estado"}
+            member @"importe_solicitado"
+            {
+                @"caption":"Importe solicitado"
+                @"textalign":"end" 
+                @"format":"true" 
+                @"decs":"2" 
+                @"prefix":"$ " 
+                @"thousandssep":"true"
+            } 
+            member @"importe_aprobado"
+            {
+                @"caption":"Importe aprobado"
+                @"textalign":"end" 
+                @"format":"true" 
+                @"decs":"2" 
+                @"prefix":"$ " 
+                @"thousandssep":"true"
+            }
+            member @"concepto"{@"caption":"Concepto"} 
+            member @"_actions"
+            {
+                @"caption":"Acciones"
+                @"no-print":@true
+                @"template":ftext('
+                    <div>
+                        <a style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;" href="#<url_edit>">Ver</a>
+                    </div>
+                ')
+            }
+        }
+    }
+    isnew=@("$parameters/_entity_id")=="_new"
+    @url_new=replace(@REEG_ADD_EDIT,"{id}","_new")
+
+    buttons::
+    {
+        #$
+        a(href="#<@url_new>" class="btn btn-sm border-secondary induxsoft-corners"){"Agregar"}
+        #!
+    }
+    point buttons to buttons
+
+    fstart=@("$parameters/fstart")
+    fend=@("$parameters/fend")
+    #$ div(class="container-fuid")
+    {
+        #!
+        do uie.printMainBar(buttons,"Reembolso de gastos de empleado",@true,"")
+        #$
+        div(id="work_area" class="container-section pt-2")
+        {
+            div(class="ps-2 pe-2 pb-2")
+            {
+                form(action="./" method="GET" id="form_search" class="")
+                {
+                    div(class="row")
+                    {
+                        div(class="col-md-3")
+                        {
+                            #!
+                            do uie.dbSelect(status)
+                            #$
+                        }
+                        div(class="col-md-3")
+                        {
+                            "date-range"(id="filter_date"
+                                    "hidden-input-name-start"="fstart"
+                                    "hidden-input-name-end"="fend"
+                                    start="#<fstart>"
+                                    "start-label"="Desde:"
+                                    end="#<fend>"
+                                    "end-label"="Hasta:"){""}
+                        }
+                        // div(class="col-md-3")
+                        // {
+                        //     div(class="d-flex mt-4")
+                        //     {
+                        //         button(class="btn border-secondary induxsoft-corners btn-main-action no-print "){"Filtrar"}
+                        //     }
+                        // }
+                    }
+                }
+            }
+            
+            div(class="ps-2 pe-2")
+            {
+                #!
+                do uie.dbeditable(table,"table_reeg")
+                #$
+            }
+        }
+        #$
+        script(src="#<@JS_REEG>"){""}
+    }
+}

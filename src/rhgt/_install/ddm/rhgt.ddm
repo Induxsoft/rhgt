@@ -1,0 +1,229 @@
+# include "ddm.dkh"
+model "alimentos y bebidas"
+{
+	#include "induxsoft.abstracts.ddm"
+    entity "divisa" : "TableModel"
+    {
+        @"codigo" string(5) unique required
+        @"descripcion" string(30) unique required
+    }
+     entity "categoria" : "TableModel"
+    {
+        @"codcuenta" string(50) unique
+        @"codigo" string(5) unique required
+        @"descripcion" string(50) unique required
+    }
+    entity "proveedor" : "TableModel"
+    {
+        @"codcuenta" string(50) unique          // Código de cuenta contable asociado
+        @"codigo" string(35) unique required    // Código o identificador del proveedor
+        @"curp" string(35) unique        
+        @"nombre" string(150) unique required              // Status del proveedor (normal o bloqueado)
+        @"tasaiva" ref:"ctasasiva" required
+        @"idivisa" ref:"divisa" required    
+        @"tipo" ref:"tipoproveedor" required  
+    }
+    entity "ctasasiva" : "EnumModel" {}
+    entity "tipoproveedor" : "TableModel"
+    {
+        @"codigo" string(15) unique required
+        @"descripcion" string(50) unique required
+    }
+
+    entity "rh_empleado_org" : "TableModel"
+    {
+        @"codigo" string(32) unique required
+        @"nombre" string(100) required
+        @"apellido1" string(100) 
+        @"apellido2" string(100) 
+        @"rfc" string(15) unique required
+        @"curp" string(25) unique required
+        @"fnacimiento" date required
+        @"fingreso" date 
+        @"fcontratacion" date 
+        @"sat_regimenfiscal" string(5) 
+        @"sat_cp" string(5) 
+        @"foto" string(32) 
+        @"factualizacionfoto" datetime 
+        @"nacionalidad" string(50) 
+        @"edocivil" int ref:"rh_edo_civil" ["id"] required
+        @"conyuge" string(150) 
+        @"depeconomicos" int 
+        @"hijos" int 
+        @"pension" bool 
+        @"ingresonecesario" decimal(14,4) 
+        @"tipovivienda" int ref:"rh_tipo_vivienda" ["id"] 
+        @"gastofamiliarmensual" decimal(14,4) 
+        @"aportaciongasto" decimal(6,2) 
+        @"fechaestudiosocioe" date 
+        @"escolaridad" int ref:"rh_nvl_escolaridad" ["id"] required
+        @"titulos" string(150) 
+        @"competencias" string(4096) 
+        @"estrellas" int 
+        @"cerebros" int 
+        @"focos" int 
+        @"tachas" int 
+        @"notas" string(4096) 
+        @"totalmiembrosfam" int 
+        @"obs_socio" string(4096) 
+        @"ref_categoria" int ref:"rh_categoria_empleado" ["sys_pk"] 
+        @"nss" string(50) 
+    }
+    /* uod.rh_edo_civil */
+    entity "rh_edo_civil" : "EnumModel" {}
+    /* uod.rh_tipo_vivienda */
+    entity "rh_tipo_vivienda" : "EnumModel" {}
+    /* uod.rh_nvl_escolaridad */
+    entity "rh_nvl_escolaridad" : "EnumModel" {}
+    /* uod.rh_categoria_empleado */
+    entity "rh_categoria_empleado" : "TableModel"
+    {
+        @"nombre" string(50) unique required
+        @"notas" string(4096) 
+    }
+    entity "gop_mov": "TableModel"
+	{
+		@"ref_partida" ref:"gop_partida" required
+		@"periodo" int required // 1...12 -(Enero...Dic), 13-Reserva
+		@"comprometido" decimal(18,4)
+		@"ejercido" decimal(18,4)
+		@"dte" ref:"sys_app_item_type" required
+		@"dte_id" int required
+		@"usuario" string(50)
+	}
+    entity "gop_partida" :"TableModel"
+	{
+		@"ref_presupuesto" ref: "gop_presupuesto" required
+		@"padre" ref : "gop_partida"
+		@"partida" string(255) required
+		index "gop_partida_unique1" unique
+		{
+			field "id"
+			field "ref_presupuesto"
+		}
+	}
+    entity "gop_presupuesto" : "TableModel"
+	{
+		@"ref_unidad" ref: "rh_unidad_org" required
+		@"ejercicio" int required
+		@"titulo" string(150) required
+		@"status" ref : "gop_presupuesto_status" required
+		@"divisa" ref : "divisa" required
+		index "gop_presupuesto_id" unique
+		{
+			field "ref_unidad"
+			field "ejercicio"
+		}
+	}
+    /* uod.rh_unidad_org */
+    entity "rh_unidad_org" : "TableModel"
+    {
+        @"codigo" string(32) unique required
+        @"descripcion" string(150) required
+        @"superior" int ref:"rh_unidad_org" ["sys_pk"] 
+        @"notas" string(4096) 
+        @"link" string(1024) 
+    }
+    entity "gop_presupuesto_status" : "EnumModel" {} // 1-Borrador, 2-Por aprobar, 3-Aprobado, 4-Cerrado
+    //////////////////// entidades estrs +___
+
+    entity "cdocumentos" : "EnumModel" {}
+    entity "chequera" : "TableModel"
+    {
+        @"clabe" string(18) unique
+        @"codcuenta" string(50) unique
+        @"nombre" string(25) unique required
+        @"numcuenta" string(25) unique
+        @"idivisa" ref:"divisa" required
+    }
+    entity "movcuenta" : "TableModel"
+    {
+        @"notas" string(4096) required
+        @"referencia" string(50) required
+        @"tipo" ref:"cdocumentos" required
+        @"icategoria" ref:"categoria" required
+        @"icuenta" ref:"chequera" required
+        @"uf_fechacancelacion" datetime
+        @"uf_iproveedor" ref:"proveedor"
+
+        index "movcuenta_id" unique
+        {
+            field "icuenta"
+            field "referencia"
+        }
+    }
+    ///reeg
+    entity "rhgf_ree_status":"EnumModel"
+    {
+        /*
+        0-Por aprobar
+        9-Rechazada
+        10-Aprobada
+        20-Pagada
+        99-Cancelada
+        */
+    }
+
+    entity "rhgf_ree":"TableModel" //Reembolsos a empleados
+    {
+        @"ref_empleado" ref:"rh_empleado_org" required
+        @"f_solicitud" date required
+        @"status" ref:"rhgf_ree_status" required
+        @"concepto" memo required
+        @"importe_solicitado" decimal(12,4) required
+        @"importe_aprobado" decimal(12,4)
+        @"f_rechazo" date
+        @"f_aprobacion" date
+        @"ref_movcta" ref:"movcuenta"
+        @"ref_gop_mov" ref:"gop_mov"
+        @"usuario" string(50)
+        @"hoja" memo
+    }
+
+    entity "rhgf_ree_cfg_ctas":"TableModel"
+    {
+        @"ref_chequera" ref:"chequera" required unique
+    }
+    entity "rhgf_ree_cfg_cat":"TableModel"
+    {
+        @"ref_categoria" ref:"categoria" required unique
+        @"req_partida" bool
+    }
+    entity "rhgf_ree_bit":"TableModel" //Bitácora de solicitud de reembolso a empleados
+    {
+        @"ref_ree" ref:"rhgf_ree" required
+        @"nota" memo required
+        @"usuario" string(50)
+    }
+    // Información de la aplicación
+    entity "sys_app_catalog"
+    {
+        @"pack_id" string(32) required
+        @"app_id" string(32) key
+        @"app_title" string(255)
+        @"created" datetime required
+        @"app_info" mmemo
+    }
+    // Categoria de la aplicación
+    entity "sys_app_category"
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+    }
+    // Recursos de la aplicación
+    entity "sys_app_shortcut" 
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+        @"icon96x96" string(1024) required
+        @"src" string(1024) required
+        @"_blank" bool
+        @"appid" ref : "sys_app_catalog"
+        @"cat" ref :"sys_app_category"
+    }
+    entity "sys_app_item_type"
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+    }
+}

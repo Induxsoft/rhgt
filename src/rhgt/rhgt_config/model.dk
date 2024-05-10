@@ -1,0 +1,11 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+   list::&db,&params
+   {
+      return @null
+   }
+   
+   point @list to list
+}

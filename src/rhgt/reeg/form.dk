@@ -1,0 +1,289 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "../config.dk"
+    #include "../_lib/icons.dk"
+
+    do @context.begin(@crud_context)
+    editar=@("#./sys_pk")==0
+
+    @url_pagar=replace(@REEG_ADD_EDIT,"{id}",@("$./sys_pk"))
+    @url_pagar=path.concat(@url_pagar,"view-pagar/")
+
+    json=@("$./hoja")
+    if trim(json)==""{json="[]"}
+
+    ref jsondata=from.json(json)
+    buttons::
+    {
+        if @("#./sys_pk")>0 
+        {
+            
+            #! if @("#./status")==@REEG_POR_APROBAR
+            {
+                #$ button(type="button" id="aprobar" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Aprobar"}
+            }
+            #! if @("#./status")!=@REEG_CANCELAR  && @("#./status")!=@REEG_RECHAZAR && @("#./status")!=@REEG_PAGAR 
+            {
+                #$
+                a(href="#<@url_pagar>" id="pagar" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Pagar"}
+                #!
+                if @("#./status")!=@REEG_APROBAR
+                {
+                    #$
+                    button(type="button" id="rechazar" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Rechazar"}
+                }
+                #$
+                
+                button(type="button" id="cancelar" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Cancelar"}
+                
+            }
+            
+            #!
+        }
+        else 
+        {
+            #$
+            button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"#<@ICON_SAVE>"}
+        }
+        
+        
+        #!
+    }
+    point buttons to buttons
+
+    json_adjuntos=to.json(@('&./adjuntos'))
+
+    showdisabled=@false
+    if @("#./status")!=@REEG_CANCELAR  && @("#./status")!=@REEG_RECHAZAR && @("#./status")!=@REEG_PAGAR{showdisabled=@true}
+    #$
+    div(class="container")
+    {
+        script(src="#<@JS_REEG>"){""}
+        form(method="POST" action="." id="form_reeg" onsubmit="return reeg.validate()")
+        {
+            #!
+            do uie.printMainBar(buttons,"Reembolso de gastos de empleado",@false,@REEG)
+            #$
+            div(class="d-flex")
+            {
+                span(class="flex-grow-1"){""}
+                h4{"#<@('$./estado')>"}
+            }
+            #! if @("$error/message")!=""
+            {
+                #$ div(class="alert alert-danger"){"#<@('$error/message')>"}
+            }
+            #$
+            input(type="hidden" class="induxsoft-form-control" id="sys_recver" name="sys_recver" value="#<@('#./sys_recver')>" )
+
+            div(class="row")
+            {
+                div(class="col-md-8")
+                {
+                    label{"Empleado:"}
+                    "input-key"(id="ref_empleado"
+                                name="ref_empleado"
+                                "data-key"="sys_pk"
+                                "data-search"="codigo"
+                                "data-text"="nombre"
+                                "data-value"='#<to.json(ifnull(@("&./empleado"),record.create()))>'
+                                "data-source"="#<@URL_BUSCAR_EMPLEADO>"
+                                "box-title-text"="Seleccione un empleado"
+                                "box-placeholder-text"="Buscar empleado"
+                                "box-nodata-text"="No se encontraron datos"
+                                disabled="#<ifstr(editar,'false','true')>"
+                                required="true"
+                                columns="codigo,nombre,apellido1,apellido2,rfc,curp"
+                                colcaptions="Código,Nombre,Apellido paterno,Apellido materno,RFC,CURP" required="true"){""}
+                }
+                div(class="col-md-2")
+                {
+                    label{"Importe solicitado:"}
+                    input(type="number" class="induxsoft-form-control induxsoft-num-field" "num-style"="decimal" "num-decs"="2" "#<ifstr(editar,'','disabled')>"="true" id="importe_solicitado" required="true" name="importe_solicitado" value="#<@('#./importe_solicitado')>")
+                }
+                #! if @("#./sys_pk")>0
+                {
+                    #$ div(class="col-md-2")
+                    {
+                        label{"Importe aprobado:"}
+                        input(type="number" class="induxsoft-form-control induxsoft-num-field" "#<ifstr(not(showdisabled) || @('#./status')==@REEG_APROBAR,'disabled','')>"="true" "num-style"="decimal" "num-decs"="2" id="importe_aprobado" required="true" name="importe_aprobado" value="#<@('#./importe_aprobado')>")
+                    }
+                }
+                
+                
+                div(class="col-md-12")
+                {
+                    label{"Concepto:"}
+                    textarea(class="induxsoft-form-control" "#<ifstr(editar,'','disabled')>"="true" required="true" name="concepto"){"#<@('$./concepto')>"}
+                }
+            }
+        }
+        
+        #$
+        div(class="card mt-2")
+        {
+            div(class="card-body")
+            {
+                div(class="row")
+                {
+                    #!
+                    if @("#./sys_pk")>0
+                    {
+                        #$ div(class="col-md-6")
+                        {
+                            form(method="POST" action=".")
+                            {
+                                input(type="hidden" id="bit" name="bit" value="1")
+
+                                #! if showdisabled
+                                {
+                                    #$ div(class="row")
+                                    {
+                                        div(class="col-md-8")
+                                        {
+                                            input(class="induxsoft-form-control" name="nota" required="true"){""}
+                                        }
+                                        div(class="col-md-4")
+                                        {
+                                            div(class="d-flex ")
+                                            {$""
+                                                button(class="btn border-secondary induxsoft-corners btn-main-action no-print"){"Agregar"}
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                            }
+                            
+                            table(class="table")
+                            {
+                                thead
+                                {
+                                    tr
+                                    {
+                                        th{"Fecha"}
+                                        th{"Nota"}
+                                        th{"Usuario"}
+                                    }
+                                }
+                                tbody
+                                {$""
+                                    #!
+                                    ref bitacora=@("&./bitacora")
+                                    for i = 0; i < @count(bitacora)
+                                    {
+                                        ref item=@item(bitacora,i)
+                                        #$
+                                        tr
+                                        {
+                                            td{"#<@@(item,'$fecha')>"}
+                                            td{"#<@@(item,'$nota')>"}
+                                            td{"#<@@(item,'$username')>"}
+                                        }
+                                    }
+                                    #$
+                                }
+                            }
+                        }
+                    }
+                    
+                    div(class="col-md-#<ifstr(@('#./sys_pk')!=0,'6','12')>")
+                    {
+                        ul(class="nav nav-tabs border-0" id="nav-tab" role="tablist")
+                        {
+                            #!
+                            if @count(jsondata)>0 || @("#./sys_pk")<1
+                            {
+                                #$ 
+                                li(class="nav-item" style="cursor:pointer;"){a(class="nav-link active" id="nav-principal-tab" "data-bs-toggle"="tab" "-toggle"="tab" "data-bs-target"="#nav-principal" role="tab" "aria-controls"="nav-principal" "aria-selected"="true"){"Hoja de gastos"}}
+                            }
+                            
+                            li(class="nav-item #<ifstr(@count(jsondata)<1 ,'active','')>" style="cursor:pointer;"){a(class="nav-link" id="nav-adjuntos-tab" "data-bs-toggle"="tab" "-toggle"="tab" "data-bs-target"="#nav-adjuntos" role="tab" "aria-controls"="nav-adjuntos" "aria-selected"="false"){"Adjuntos"}}
+                        }
+                        div(class="tab-content" id="nav-tabContent")
+                        {
+                            div(class="tab-pane fade #<ifstr(@count(jsondata)!=0 || @('#./sys_pk')<1,'active show','')>" id="nav-principal" role="tabpanel" "aria-labelledby"="nav-principal-tab")
+                            {
+                                #! if @('#./sys_pk')<1
+                                {
+                                    #$ div(class="d-flex")
+                                    {
+                                        span(class="flex-grow-1"){""}
+                                        button(class="btn border-secondary induxsoft-corners btn-main-action no-print mb-2 btn-sm m-1" onclick="reeg.DelRow();"){$"#<@ICON_REMOVE_ROW>"}
+                                        button(class="btn border-secondary induxsoft-corners btn-main-action no-print mb-2 btn-sm m-1" onclick="reeg.AddRow();"){$"#<@ICON_ADD_ROW>"}
+                                    }
+                                }
+
+                                "edit-table"(class="table" id="table_hoja" data="#<json>" "cards-responsive"="true")
+                                {
+                                    "edit-thead"
+                                    {
+                                        "edit-tr"(style="width:100%")
+                                        {
+                                            "edit-th"(type="#<ifstr(@('#./sys_pk')!=0,'NoEditable','Text')>" field="cponcepto" style="width:8%;height:0!important"){"Concepto"}
+                                            "edit-th"(type="#<ifstr(@('#./sys_pk')!=0,'NoEditable','Number')>" textalign="end" format="true" decs="2" prefix="$ " thousandssep="true" field="importe" style="width:8%;height:0!important"){"Importe"}
+                                        }
+                                    }
+                                }
+                            }
+                            div(class="tab-pane #<ifstr(@count(jsondata)<1 && @('#./sys_pk')!=0,'active show','')>" id="nav-adjuntos" role="tabpanel" "aria-labelledby"="nav-adjuntos-tab")
+                            {
+                                div(class="mt-2")
+                                {
+                                    #!
+                                    if showdisabled
+                                    {
+                                        #$
+                                        input(type="file" id="adjuntos_reeg" name="adjuntos_reeg" style="display:none")
+                                        label("for"="adjuntos_reeg" class="btn btn-sm border-secondary induxsoft-corners btn-main-action m-1" id="btn_adjuntos"){"Adjuntos"}
+                                   
+                                    }
+                                    
+                                    button(class="btn btn-outline-primary btn-sm induxsoft-corners m-1" onclick="reeg.preview()"){"Descargar"}
+
+                                    hr{}
+                                    "media-list"(
+                                    id="media-list"
+                                    data='#<json_adjuntos>'
+                                    "can-arrange"="true"
+                                    "can-drag"="true"
+                                    "can-drop"="true"
+                                    "can-delete"="false"
+                                    "highlight-first"="true"
+                                    "media-prop"="url"
+                                    "miniature-prop"="mini"
+                                    "outline-selected"="true"
+                                    "label-prop"="name"
+                                    ){""}
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+                
+            }
+        }
+        
+
+        #$
+        script
+        {
+            $'
+            reeg.reeg_por_aprobar=#<@REEG_POR_APROBAR>;
+            reeg.reeg_rechazar=#<@REEG_RECHAZAR>;
+            reeg.reeg_aprobar=#<@REEG_APROBAR>;
+            reeg.reeg_pagar=#<@REEG_PAGAR>;
+            reeg.reeg_cancelar=#<@REEG_CANCELAR>;
+            reeg.pk_reeg=#<@("#./sys_pk")>;
+            reeg.sys_guid_tmp="#<@("$./sys_guid_tmp")>";
+            reeg.url_reeg=".";
+            '
+        }
+    }
+}
