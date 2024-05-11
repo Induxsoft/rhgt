@@ -7,8 +7,25 @@ module ""
 
     @table_name="rhgf_ree_cfg_ctas"
     
+    @list_query="SELECT c.sys_pk,c.nombre nombre ,d.codigo divisa,c.codcuenta,c.numcuenta,c.notas,b.nombre banco,c.clabe
+    FROM chequera c 
+    INNER JOIN rhgf_ree_cfg_ctas rc ON c.sys_pk=rc.ref_chequera
+    INNER JOIN divisa d ON d.sys_pk = c.idivisa 
+    LEFT JOIN banco b ON c.ibanco=b.sys_pk
+    WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
+
+    @list_query_cta="SELECT c.sys_pk,c.nombre nombre ,d.codigo divisa,c.codcuenta,c.numcuenta,c.notas,b.nombre banco,c.clabe
+    FROM chequera c 
+    INNER JOIN divisa d ON d.sys_pk = c.idivisa 
+    LEFT JOIN banco b ON c.ibanco=b.sys_pk
+    WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
+    
     list::&db,&params
     {
+        if @@(params,"#cta")
+        {
+            return dbr.list(db,ftext(@list_query_cta),params)
+        }
        ref entity= entity.list(db,params)
        return entity
     }

@@ -1,0 +1,27 @@
+.card_config
+{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 7.5rem);
+    grid-auto-rows: auto;
+    gap: 1rem;
+}
+.card_config_container
+{
+    transition: .3s;
+    outline: 1px solid transparent;
+    height: 5rem;
+    display: flex;
+    justify-items: center;
+    align-items: center;
+    outline: 1px solid #DDD;
+}
+.card_config_container:hover
+{
+    box-shadow: 3px 3px 9px 0 #DDD;
+    outline: 1px solid #DDD;
+}
+.card_config_caption
+{
+    word-break: break-word;
+    text-align: center;
+}

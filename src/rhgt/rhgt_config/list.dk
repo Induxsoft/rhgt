@@ -8,12 +8,25 @@ module ""
     #include "uielements.dkl"
     #include "uielements.v12.dkl"
 
-
-    
     #$
-    div
+    div(class="container")
     {
-        button(class="btn btn-secondary"){"Configuración de cuentas"}
-        button(class="btn btn-secondary"){"Configuración de categorías"}
+        div(class="card_config mt-4")
+        {
+            div(class="card_config_container")
+            {
+                a(href="#<@CONFIG_CTA>" class="text-decoration-none")
+                {
+                    div(class="card_config_caption figure-caption"){"Configuración de cuentas"}
+                }
+            }
+            div(class="card_config_container")
+            {
+                a(href="#<@CONFIG_CAT>" class="text-decoration-none")
+                {
+                    div(class="card_config_caption figure-caption"){"Configuración de categorías"}
+                }
+            }
+        }
     }
 }

@@ -3,4 +3,66 @@
 module ""
 {
     @table_name="rhgf_ree_cfg_cat"
+
+    @list_query_cat="SELECT c.sys_pk,c.descripcion ,c.codigo,c.codcuenta,c.tipo
+    FROM categoria c
+    WHERE tipo = 2 
+    AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
+
+    @list_query="SELECT rc.sys_pk pkrc,c.sys_pk,c.descripcion ,c.codigo,c.codcuenta,c.tipo,IFNULL(rc.req_partida,0)req_partida,if(IFNULL(rc.req_partida,0),'Sí','No')freq_partida
+    FROM categoria c
+    INNER JOIN rhgf_ree_cfg_cat rc ON c.sys_pk=rc.ref_categoria
+    WHERE tipo = 2 
+    AND NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
+
+    prepareView::&db,&params,&entity
+    {
+        using params{@"cat":@@(entity,"#ref_categoria")}
+
+        using entity
+        {
+            @"categoria*":dbr.rec(db,"select * from categoria where sys_pk=@cat",params)
+        }
+    }
+    list::&db,&params
+    {
+        if @@(params,"#cat")
+        {
+            return dbr.list(db,ftext(@list_query_cat),params)
+        }
+
+       ref entity= entity.list(db,params)
+       return entity
+    }
+    read::&db,&params
+    {
+        ref entity= entity.read(db,params)
+        do prepareView(db,params,entity)
+       return entity
+    }
+    
+    point @read to read
+    save::&db,&params,&data
+    {
+        if parse.bool(@@(data,"$req_partida")){data<"req_partida">:1}
+        else{data<"req_partida">:0}
+
+        ref entity=@null
+    
+        if @@(params,"$_entity_id")!="_new"{ref entity= entity.update(db,params,data)} 
+        else{ref entity=entity.create(db,params,data)}
+
+        return entity
+
+        exception
+        {
+            error=last_error()
+            do prepareView(db,params,data)
+            do rise_error(500,error)
+        }
+    }
+    
+    point @create to save
+    point @update to save
+    point @list to list
 }

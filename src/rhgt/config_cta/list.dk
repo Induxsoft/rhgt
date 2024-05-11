@@ -4,7 +4,58 @@ module ""
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+    #include "../config.dk"
 
-    #$
-    div{"ctas"}
+    do @context.begin(@crud_context)
+    ref data = @("&.")
+
+    new table
+    {
+        @"datatable*":data
+        @"leyend":"Mostrando las primeras # filas "
+        @"auto-confirm":"true"
+        member @"columns"
+        {
+            member @"nombre"{@"caption":"Cuenta"}
+            member @"divisa"{@"caption":"Divisa"}
+            member @"banco"{@"caption":"banco"} 
+            member @"_actions"
+            {
+                @"caption":"Acciones"
+                @"no-print":@true
+                @"template":ftext('
+                    <div>
+                        <button onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; padding: 4px 8px; background-color: #F5F5F5; color: #000;">Eliminar</button>
+                    </div>
+                ')
+            }
+        }
+    }
+
+    @url_new=replace(@CONFIG_CTA_ADD_EDIT,"{id}","_new")
+    buttons::
+    {
+        #$
+        a(href="#<@url_new>" class="btn btn-sm border-secondary induxsoft-corners"){"Agregar"}
+        #!
+    }
+    point buttons to buttons
+
+    #$ div(class="container-fuid")
+    {
+        #!
+        do uie.printMainBar(buttons,"Configuración de cuentas",@true,@REEG_CONFIG)
+        #$
+        div(id="work_area" class="container-section pt-2")
+        {
+            div(class="ps-2 pe-2")
+            {
+                #!
+                do uie.dbeditable(table,"table_reeg")
+                #$
+            }
+        }
+    }
 }

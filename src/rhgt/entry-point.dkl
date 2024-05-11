@@ -12,6 +12,19 @@ module "Controller configs"
 		@http_context<"response/headers/location"> : "/"
 		return
 	}
+	if not(field.exist(@@(@http_context,"&session"),"resource")) { @http_context<"session/resource*">:record.create() }
+	if not(field.exist(@@(@http_context,"&session/resource"),"properties")) { @http_context<"session/resource/properties*">:record.create() }
+	if not(field.exist(@@(@http_context,"&session/resource/properties"),"web_meta_tags")) { @http_context<"session/resource/properties/web_meta_tags*">:record.create() }
+	if not(field.exist(@@(@http_context,"&session/resource/properties/web_meta_tags"),"web_page")){@http_context<"session/resource/properties/web_meta_tags/web_page*">:record.create()}
+	if not(field.exist(@@(@http_context,"&session/resource/properties"),"web_page")){@http_context<"session/resource/properties/web_page*">:record.create()}
+
+	text scripts
+	{
+		$'
+		<link rel="stylesheet" href="/$/rhgt/css/main.css"></link>
+		'
+	}
+	@http_context<"session/resource/properties/web_page/end_head">:scripts
 
 	@base_path="rhgt"
 	@path_root="" // Establezca una ruta de ser necesario
@@ -20,6 +33,8 @@ module "Controller configs"
 	do crudl.routes.pattern("/_program/")
 	do crudl.routes.entity("/reeg/","reeg")
 	do crudl.routes.entity("/rhgt_config/","rhgt_config")
+	do crudl.routes.entity("/config_cta/","config_cta")
+	do crudl.routes.entity("/config_cat/","config_cat")
 
 	@dbmvc_path="crudl/"
 	@auto_crud=@true

@@ -4,7 +4,61 @@ module ""
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+    #include "../config.dk"
 
-    #$
-    div{"cat"}
+    do @context.begin(@crud_context)
+    ref data = @("&.")
+    @url_new=replace(@CONFIG_CAT_ADD_EDIT,"{id}","_new")
+    @url_edit=replace(@CONFIG_CAT_ADD_EDIT,"{id}","${DataRow.pkrc}")
+    new table
+    {
+        @"datatable*":data
+        @"leyend":"Mostrando las primeras # filas "
+        @"auto-confirm":"true"
+        member @"columns"
+        {
+            member @"codigo"{@"caption":"Código"}
+            member @"descripcion"{@"caption":"Categoría"}
+            member @"codcuenta"{@"caption":"Código cuenta"} 
+            member @"freq_partida"{@"caption":"Requiere partida"} 
+            member @"_actions"
+            {
+                @"caption":"Acciones"
+                @"no-print":@true
+                @"template":ftext('
+                    <div>
+                        <a href="#<@url_edit>" style="cursor:pointer; border: none; padding: 4px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
+                        <button onclick="InduxsoftCrudlModel.Delete(${DataRow.pkrc})" style="cursor:pointer; border: none; padding: 4px 8px; background-color: #F5F5F5; color: #000;">Eliminar</button>
+                    </div>
+                ')
+            }
+        }
+    }
+
+    
+    buttons::
+    {
+        #$
+        a(href="#<@url_new>" class="btn btn-sm border-secondary induxsoft-corners"){"Agregar"}
+        #!
+    }
+    point buttons to buttons
+
+    #$ div(class="container-fuid")
+    {
+        #!
+        do uie.printMainBar(buttons,"Configuración de categorías",@true,@REEG_CONFIG)
+        #$
+        div(id="work_area" class="container-section pt-2")
+        {
+            div(class="ps-2 pe-2")
+            {
+                #!
+                do uie.dbeditable(table,"table_reeg_cat")
+                #$
+            }
+        }
+    }
 }

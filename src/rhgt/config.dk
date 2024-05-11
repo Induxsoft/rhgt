@@ -8,6 +8,15 @@ module "config"
     @LIMIT_ROWS = 200
 
     @REEG_CONFIG="/!/"+@PACK+"/rhgt_config/"
+    @CONFIG_CTA="/!/"+@PACK+"/config_cta/"
+    @CONFIG_CTA_ADD_EDIT="/!/"+@PACK+"/config_cta/{id}/"
+
+    @CONFIG_CAT="/!/"+@PACK+"/config_cat/"
+    @CONFIG_CAT_ADD_EDIT="/!/"+@PACK+"/config_cat/{id}/"
+
+    @GET_CTAS=@CONFIG_CTA + "?cta=1"
+    @GET_CTAS=@CONFIG_CAT + "?cat=1"
+
     //#region empleados
     @JS_EMPLEADOS = "/$/rhgf/js/empleados.js"
     @URL_BUSCAR_EMPLEADO = "/!/rhgf/empleados/?_view=buscar-empleado&search=@search"

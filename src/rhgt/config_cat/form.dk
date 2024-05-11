@@ -1,0 +1,73 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "../config.dk"
+    #include "../_lib/icons.dk"
+
+    do @context.begin(@crud_context)
+
+    buttons::
+    {
+        #$
+        button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"#<@ICON_SAVE>"}
+        #!
+    }
+    point buttons to buttons
+
+    cat=to.json(@('&./categoria'))
+    disabled=ifstr(@("#./sys_pk")>0,"true","false")
+    #$ div(class="container")
+    {
+        #! if @("$error/message")!=""
+        {
+            #$
+            div(class="alert alert-danger"){"#<@('$error/message')>"}
+        }
+
+        form(method="POST" action="." id="form_reeg" onsubmit="")
+        {
+            input(type="hidden" class="induxsoft-form-control" id="sys_recver" name="sys_recver" value="#<@('#./sys_recver')>")
+            #!
+            do uie.printMainBar(buttons,"Configuración de categorías",@false,@CONFIG_CAT)
+            #$
+            div(class="row")
+            {
+                div(class="col-md-6")
+                {
+                    label{"Categoria:"}
+                    "input-key"(name="ref_categoria" 
+                    id="ref_categoria" 
+                    disabled="#<disabled>"
+                    required="true" 
+                    "data-key"="sys_pk" 
+                    "data-search"="codigo" 
+                    "data-text"="descripcion"
+                    "data-value"="#<cat>" 
+                    "data-source"="#<@GET_CTAS>" 
+                    columns="codigo,descripcion,codcuenta" 
+                    colcaptions="Código,Categoría,Código de cuenta"
+                    "control-styles"="
+                        #input_search_container, #input_description_container,
+                        #button_search_container, #button_clear_container {
+                            height: calc(1.5em + .5rem + 2px) !important;
+                            padding: .25rem .5rem !important;
+                            font-size: .875rem !important;
+                        }
+                    "){$""}
+                }
+                div(class="col-md-6")
+                {
+                    div(class="mt-4")
+                    {
+                        label{input(type="checkbox" id="req_partida" name="req_partida" "#<ifstr(@('#./req_partida'),'checked','')>"="true") " Requiere partida"}
+                    }
+                    
+                }
+            }
+        }
+    }
+}
