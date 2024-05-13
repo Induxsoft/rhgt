@@ -3,7 +3,8 @@
 module ""
 {
     #include "../_lib/lib.dk"
-    #include "efectivo/movimientos.dkh"
+    include @PATH_EFECTIVO_MOV
+    include @PATH_PREGOP_DKH
 
     @table_name="rhgf_ree"
     @list_query="SELECT r.sys_pk,CONCAT_WS(' ',e.nombre,e.apellido1,e.apellido2)empleado,DATE_FORMAT(r.f_solicitud,'%Y-%m-%d')fecha_solicitud,
@@ -49,13 +50,25 @@ module ""
 
             if @@(params,"$_view")!=""
             {
-                sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
+                sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c 
+                    INNER JOIN divisa d ON d.sys_pk = c.idivisa 
+                    INNER JOIN rhgf_ree_cfg_ctas rc on c.sys_pk=rc.ref_chequera
+                    WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
+
                 entity<"cuentas*"> : dbr.list(db,sql,@null)
-                sql = "SELECT sys_pk,descripcion FROM categoria WHERE tipo = 2 AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
+
+                sql = "SELECT c.sys_pk,c.descripcion,ifnull(rc.req_partida,0)req_partida
+                        FROM categoria  c
+                        INNER JOIN rhgf_ree_cfg_cat rc on c.sys_pk=rc.ref_categoria
+                        WHERE tipo = 2 
+                        AND NOT IFNULL(c.sys_deleted,0) 
+                        ORDER BY sys_pk;"
+
                 entity<"categorias*"> : dbr.list(db,sql,@null)
                 sql = "SELECT doc.id,doc.const FROM cdocumentos doc INNER JOIN cfg_chq_docs cfg ON cfg.documento = doc.id WHERE IFNULL(cfg.retiros,0) ORDER BY doc.id;"
                 entity<"documentos*"> : dbr.list(db,sql,@null)
-                break
+
+                
             }
         }
         
@@ -161,6 +174,30 @@ module ""
                 if @@(reeg,"#importe_aprobado")<1{ndata<"importe_aprobado">:@@(data,"#importe")}
                 
                 do dbr.save(db,"rhgf_ree",ndata)
+
+                if @@(data,"#icategoria")>0
+                {
+                    using params{@"cat":@@(data,"#icategoria")}
+                    ref cat=dbr.rec(db,"select sys_pk,ifnull(req_partida,0)req_partida from rhgf_ree_cfg_cat where ref_categoria=@cat",params)
+                    if @@(cat,"#req_partida")
+                    {
+                        if @@(data,"#partida")<1{do rise_error(500,"Esta operación requiere partida")}
+
+                        using params
+                        {
+                            @"sys_pk":@@(data,"#partida")
+                            @"referencia":@@(reeg,"$sys_guid")
+                            @"periodo":@@(data,"#periodo")
+                            @"ejercido":@@(data,"#importe")
+                            @"det":@DTE_REEG
+                            @"det_id":@@(reeg,"#sys_pk")
+                            @"usuario":@@(@http_context,"$session/user/uid")
+                            @"notas":"Reembolso del empleado: "+@@(data,"$beneficiario")
+                            @"ejercicio":@@(data,"$ejercicio")
+                        }
+                        res=pregop.partida.movimiento(db,params)
+                    }
+                }
             do dbr.commit(db)
 
             return @null
@@ -253,7 +290,7 @@ module ""
     {
         ref entity= entity.read(db,params)
         do prepareView(db,params,entity)
-       return entity
+        return entity
     }
     list::&db,&params
     {

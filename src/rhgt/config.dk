@@ -17,6 +17,17 @@ module "config"
     @GET_CTAS=@CONFIG_CTA + "?cta=1"
     @GET_CTAS=@CONFIG_CAT + "?cat=1"
 
+    @URL_BUSCAR_UNIDAD_ORG = "/!/cmpreq/requisiciones/?_view=buscar-unidad-org&search=@search"
+	@URL_BUSCAR_PARTIDA_PRE = "/!/cmpreq/requisiciones/?_view=buscar-partida-pre&search=@search"
+
+    @JS_MAIN = "/$/cmpreq/js/main.js"
+	@JS_REQUISICIONES = "/$/cmpreq/js/requisiciones.js"
+	@JS_REEG = "/$/rhgt/js/reeg.js"
+
+    @PATH_EFECTIVO_MOV="efectivo/movimientos.dkh"
+    @PATH_PREGOP_DKH="pregop/pregop.dkh"
+
+    @DTE_REEG="DET07A"
     //#region empleados
     @JS_EMPLEADOS = "/$/rhgf/js/empleados.js"
     @URL_BUSCAR_EMPLEADO = "/!/rhgf/empleados/?_view=buscar-empleado&search=@search"

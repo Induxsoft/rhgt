@@ -68,7 +68,6 @@ module ""
             {
                 #$ div(class="alert alert-danger"){$"#<@('$error/message')>"}
             }
-            
 
             form(action="." method="POST" id="form_retiro")
             {
@@ -137,16 +136,9 @@ module ""
                 small(class="form-label fw-bold" "for"="txt_concepto"){$"Concepto:"}
                 textarea(class="induxsoft-form-control" name="concepto" id="txt_concepto" readonly="true" required=""){ $"#<@('$./concepto')>" }
 
-                // div(class="form-check mt-2") {
-                //     input(class="form-check-input" type="checkbox" name="conciliado" id="ch_conciliado" checked="checked")
-                //     small(class="form-check-label" "for"="ch_conciliado"){$"Conciliado"}
-                // }
                 hr{}
-                // form(method="POST" action="./?cmpreq_type=#<@type_req_gop>" id="form-new-cmpreq")
                 div
                 {
-                    // input(type="hidden" name="sys_pk" value="#<@@(cmpreq,'#sys_pk')>")
-                    // input(type="hidden" name="sys_recver" value="#<@@(cmpreq, '#sys_recver')>")
                     // input(type="hidden" name="tipo" value="#<@type_req_gop>")
 
                     div(class="row")
@@ -212,57 +204,22 @@ module ""
                                     do uie.dbSelect(sel_periodo)
                                     ##
                                 }
-
-                                // div(class="col-lg-4 col-md-4 col-sm-4")
-                                // {
-                                //     label(class="form-label" "for"="txt_referencia"){$"Referencia:"}
-                                //     div(class="input-group input-group-sm")
-                                //     {
-                                //         ##
-                                //         do uie.dbSelect(sel_serie)
-                                //         ##
-                                //         input(class="form-control form-control-sm rounded-0 text-end" type="number" name="folio" value="#<lib.form('folio','num',cmpreq)>" id="txt_folio" min="1" step="1" placeholder="<A>")
-                                //         button(class="btn btn-light btn-sm rounded-0 border" type="button" id="btn_get_folio" title="Obtener folio disponible para la serie seleccionada"){$"#<@ICON_HDOTS>"}
-                                //     }
-                                // }
-
-                                // div(class="col-lg-4 col-md-4 col-sm-4")
-                                // {
-                                //     label(class="form-label" "for"="txt_fecha"){$"Elaboración:"}
-                                //     input(class="form-control form-control-sm rounded-0" type="date" name="fecha" value="#<lib.form('fecha','dt',cmpreq)>" id="txt_fecha" required="" title="Fecha formal de elaboración")
-                                // }
-
-                                // div(class="col-lg-4 col-md-4 col-sm-4")
-                                // {
-                                //     label(class="form-label" "for"="txt_flimite"){$"Vencimiento:"}
-                                //     input(class="form-control form-control-sm rounded-0" type="date" name="flimite" value="#<lib.form('flimite','dt',cmpreq)>" id="txt_flimite" title="Fecha y hora límite para completarla")
-                                // }
-
-                                // div(class="col-lg-4 col-md-4 col-sm-4")
-                                // {
-                                //     label(class="form-label" "for"="txt_divisa"){$"Divisa:"}
-                                //     ##
-                                //     do uie.dbSelect(sel_divisa)
-                                //     ##
-                                // }
-
-                                // div(class="col-lg-4 col-md-4 col-sm-4")
-                                // {
-                                //     label(class="form-label" "for"="txt_tcambio"){$"T.Cambio:"}
-                                //     input(class="form-control form-control-sm rounded-0 induxsoft-num-field mw-100" type="number" name="tcambio" value="#<lib.form('tcambio','nm',cmpreq)>" id="txt_tcambio" min="1" max="999999.999999" step="0.000001" required="" "num-decs"="6")
-                                // }
-
-                                // div(class="col-lg-4 col-md-4 col-sm-4")
-                                // {
-                                //     label(class="form-label" "for"="txt_status"){$"Estado:"}
-                                //     ##
-                                //     do uie.dbSelect(sel_status)
-                                //     ##
-                                // }
                             }
                         }
                     }
                 }
+                #$
+                script(src="#<@JS_MAIN>"){$""}
+                script(src="#<@JS_REQUISICIONES>"){$""}
+                script(src="#<@JS_REEG>"){$""}
+                script(type="text/javascript")
+                {$'
+                    document.addEventListener("DOMContentLoaded", () => {
+                        requisiciones.form.url_get_fultimo = "#<@URL_OBTENER_FULTIMO>";
+                        requisiciones.form.init();
+                        InduxsoftNumberFields.Init();
+                    });
+                '}
             }
         }
     }

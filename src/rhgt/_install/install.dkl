@@ -33,5 +33,10 @@ program "instalador"
     */
     
     /*************************************************************************************/
+
     #include "v12.install.lib.dk"
+
+    if not(dbr.is_open(database)){ref database=dbr.open(qname)}
+    do reconnect(database,qname)
+    do dbr.apps.itemtype.view_url(database,"DET07A","/!/rhgt/reeg/@_entity_id/",@true)
 }
