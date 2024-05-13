@@ -126,10 +126,34 @@ module ""
                 }
                 div(class="row mb-2")
                 {
-                    div(class="col-12 col-sm-3")
+                    div(class="col-md-2")
                     {
                         small(class="form-label" "for"="txt_importe"){$"Importe:"}
                         input(type="number" class="induxsoft-form-control" "#<ifstr(@('#./importe_aprobado')!=0,'readonly','')>"="true" name="importe"  min="1" step="0.000001" id="txt_importe" value="#<@('#./importe_aprobado')>" required="")
+                   
+                    }
+                    
+                    div(class="col-md-2")
+                    {
+                        small(class="form-label" "for"="txt_retencion"){$"Más ISR  retenido:"}
+                        input(type="number" class="induxsoft-form-control" "#<ifstr(@('#./retisr')!=0,'readonly','')>"="true" name="retisr"  id="txt_retencion" value="#<@('#./retisr')>" )
+                   
+                    }
+                    div(class="col-md-2")
+                    {
+                        small(class="form-label" "for"="txt_retencion"){$"Más IVA retenido:"}
+                        input(type="number" class="induxsoft-form-control" "#<ifstr(@('#./retiva')!=0,'readonly','')>"="true" name="retiva"  id="txt_retencion_iva" value="#<@('#./retiva')>" )
+                   
+                    }
+                    div(class="col-md-2")
+                    {
+                        small(class="form-label" "for"="txt_traslado"){$"Menos IVA trasladado:"}
+                        input(type="number" class="induxsoft-form-control" "#<ifstr(@('#./iva')!=0,'readonly','')>"="true" name="iva" id="txt_traslado" value="#<@('#./iva')>" )
+                    }
+                    div(class="col-md-2")
+                    {
+                        h6{"Valor neto de acto:"}
+                        input(type="number" readonly="true" id="lbl_total" name="importe_neto_acto" class="induxsoft-form-control  induxsoft-num-field1"){""}
                     }
                 }
 
@@ -139,7 +163,6 @@ module ""
                 hr{}
                 div
                 {
-                    // input(type="hidden" name="tipo" value="#<@type_req_gop>")
 
                     div(class="row")
                     {
@@ -150,7 +173,7 @@ module ""
                                 div(class="col-md-8")
                                 {
                                     label(class="form-label" "for"="ik_unidad_org"){$"Unidad organizacional:"}
-                                    "input-key"(name="unidad_org" id="ik_unidad_org" required="true" "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" 
+                                    "input-key"(name="unidad_org" id="ik_unidad_org" "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" 
                                         "data-value"="#<to.json(dt_unidad_org)>" "data-source"="#<@URL_BUSCAR_UNIDAD_ORG>" columns="codigo,descripcion" colcaptions="Código,Descripción"
                                         "control-styles"="
                                             #input_search_container, #input_description_container,
@@ -184,7 +207,7 @@ module ""
                                 div(class="col-md-8")
                                 {
                                     label(class="form-label" "for"="ik_partida_pre"){$"Partida presupuestal:"}
-                                    "input-key"(name="partida" id="ik_partida_pre" required="true" "data-key"="sys_pk" "data-search"="id" "data-text"="partida"
+                                    "input-key"(name="partida" id="ik_partida_pre" "data-key"="sys_pk" "data-search"="id" "data-text"="partida"
                                         "data-value"="#<to.json(dt_partida_pre)>" "data-source"="#<@URL_BUSCAR_PARTIDA_PRE>" columns="id,partida" colcaptions="Id,Partida"
                                         "control-styles"="
                                             #input_search_container, #input_description_container,

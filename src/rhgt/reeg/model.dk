@@ -169,11 +169,13 @@ module ""
                     @"sys_pk":@@(reeg,"#sys_pk")
                     @"sys_recver":@@(reeg,"#sys_recver")
                     @"status":@REEG_PAGAR
-                    @"ref_movcta":movcuenta
+                    @"retiva":@@(data,"#retiva")
+                    @"retisr":@@(data,"#retisr")
+                    @"iva":@@(data,"#iva")
+                    @"importe_neto_acto":@@(data,"#importe_neto_acto")
                 }
                 if @@(reeg,"#importe_aprobado")<1{ndata<"importe_aprobado">:@@(data,"#importe")}
                 
-                do dbr.save(db,"rhgf_ree",ndata)
 
                 if @@(data,"#icategoria")>0
                 {
@@ -188,7 +190,7 @@ module ""
                             @"sys_pk":@@(data,"#partida")
                             @"referencia":@@(reeg,"$sys_guid")
                             @"periodo":@@(data,"#periodo")
-                            @"ejercido":@@(data,"#importe")
+                            @"ejercido":@@(data,"#importe_neto_acto")
                             @"det":@DTE_REEG
                             @"det_id":@@(reeg,"#sys_pk")
                             @"usuario":@@(@http_context,"$session/user/uid")
@@ -196,8 +198,10 @@ module ""
                             @"ejercicio":@@(data,"$ejercicio")
                         }
                         res=pregop.partida.movimiento(db,params)
+                        ndata<"presupuestado">:1
                     }
                 }
+                do dbr.save(db,"rhgf_ree",ndata)
             do dbr.commit(db)
 
             return @null

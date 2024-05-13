@@ -16,6 +16,17 @@ var reeg=
         this.table_hoja=document.getElementById("table_hoja");
         this.importe_aprobado=document.getElementById("importe_aprobado");
 
+        this.txt_importe=document.getElementById("txt_importe");
+        this.txt_retencion=document.getElementById("txt_retencion");
+        this.txt_traslado=document.getElementById("txt_traslado");
+        this.txt_retencion_iva=document.getElementById("txt_retencion_iva");
+
+        if(this.txt_importe)this.txt_importe.addEventListener("change",()=>{reeg.CalImporte();})
+        if(this.txt_retencion_iva)this.txt_retencion_iva.addEventListener("change",()=>{reeg.CalImporte();})
+        if(this.txt_retencion)this.txt_retencion.addEventListener("change",()=>{reeg.CalImporte();})
+        if(this.txt_traslado)this.txt_traslado.addEventListener("change",()=>{reeg.CalImporte();})
+
+        this.trigger(this.txt_importe,"change");
         //filter list
 
         this.form_search=document.getElementById("form_search");
@@ -79,6 +90,19 @@ var reeg=
         });
         InduxsoftNumberFields.Init();
 
+    },
+    trigger:function(element,event)
+	{
+		var e=new Event(event);
+       if(element)element.dispatchEvent(e);
+	},
+    CalImporte()
+    {
+        var importe=(Number(this.txt_importe.value) + Number(this.txt_retencion.value) + Number(this.txt_retencion_iva.value)) - Number(this.txt_traslado.value);
+    
+        var lbl_total=document.getElementById("lbl_total");
+    
+        if(lbl_total)lbl_total.value=importe;
     },
     DispatchForm()
     {

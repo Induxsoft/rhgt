@@ -172,10 +172,14 @@ model "alimentos y bebidas"
         @"concepto" memo required
         @"importe_solicitado" decimal(12,4) required
         @"importe_aprobado" decimal(12,4)
+        @"iva" decimal(18,8) 
+        @"retiva" decimal(18,8) 
+        @"retisr" decimal(18,8)
+        @"importe_neto_acto" decimal(18,8)
         @"f_rechazo" date
         @"f_aprobacion" date
         @"ref_movcta" ref:"movcuenta"
-        @"ref_gop_mov" ref:"gop_mov"
+        @"presupuestado" bool
         @"usuario" string(50)
         @"hoja" memo
     }
