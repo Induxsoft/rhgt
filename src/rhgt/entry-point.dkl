@@ -8,10 +8,15 @@ module "Controller configs"
 	#include "config.dk"
 	#include "crudl/crudl.dk"
 
+	@base_path="rhgt"
+	@path_root="" // Establezca una ruta de ser necesario
+
 	if @@(@http_context,"$session/user/ids") == "" {
-		@http_context<"response/headers/location"> : "/"
+		if file.exists("webshell/lost.dk") { include "webshell/lost.dk" }
+		else { @http_context<"response/headers/location"> : "/" }
 		return
 	}
+	
 	if not(field.exist(@@(@http_context,"&session"),"resource")) { @http_context<"session/resource*">:record.create() }
 	if not(field.exist(@@(@http_context,"&session/resource"),"properties")) { @http_context<"session/resource/properties*">:record.create() }
 	if not(field.exist(@@(@http_context,"&session/resource/properties"),"web_meta_tags")) { @http_context<"session/resource/properties/web_meta_tags*">:record.create() }
@@ -25,9 +30,6 @@ module "Controller configs"
 		'
 	}
 	@http_context<"session/resource/properties/web_page/end_head">:scripts
-
-	@base_path="rhgt"
-	@path_root="" // Establezca una ruta de ser necesario
 
 	//No modifique a menos que sepa lo que está haciendo
 	do crudl.routes.pattern("/_program/")
