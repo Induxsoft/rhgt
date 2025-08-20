@@ -1,17 +1,48 @@
-# include "ddm.dkh"
-model "alimentos y bebidas"
+#include "ddm.dkh"
+model "rhgt"
 {
+    /** 
+    Tesorería de recursos humanos
+    =======================================================================
+    */
 	#include "induxsoft.abstracts.ddm"
+
+    entity "ctiposcategorias" : "EnumModel" {}
+    entity "ctasasiva" : "EnumModel" {}
+    entity "cdocumentos" : "EnumModel" {}
+    entity "gop_presupuesto_status" : "EnumModel" {} // 1-Borrador, 2-Por aprobar, 3-Aprobado, 4-Cerrado
+    entity "gop_partida_status" : "EnumModel"
+    entity "rh_edo_civil" : "EnumModel" {}
+    entity "rh_tipo_vivienda" : "EnumModel" {}
+    entity "rh_nvl_escolaridad" : "EnumModel" {}
+    entity "rhgf_ree_status" : "EnumModel"
+    {
+        /*
+        0-Por aprobar
+        9-Rechazada
+        10-Aprobada
+        20-Pagada
+        99-Cancelada
+        */
+    }
+
     entity "divisa" : "TableModel"
     {
         @"codigo" string(5) unique required
         @"descripcion" string(30) unique required
+        @"tcambio" decimal(18,8)
+        @"decimales" int
     }
-     entity "categoria" : "TableModel"
+    entity "categoria" : "TableModel"
     {
         @"codcuenta" string(50) unique
         @"codigo" string(5) unique required
         @"descripcion" string(50) unique required
+        @"pmensual" decimal(18,8)
+        @"tipo" int ref:"ctiposcategorias" ["id"]
+        @"padre" int ref:"categoria" ["sys_pk"]
+        @"uf_inhabilitado" bool
+        @"uf_fechainhabilitacion" datetime
     }
     entity "proveedor" : "TableModel"
     {
@@ -23,11 +54,11 @@ model "alimentos y bebidas"
         @"idivisa" ref:"divisa" required    
         @"tipo" ref:"tipoproveedor" required  
     }
-    entity "ctasasiva" : "EnumModel" {}
     entity "tipoproveedor" : "TableModel"
     {
         @"codigo" string(15) unique required
         @"descripcion" string(50) unique required
+        @"notas" string(4096)
     }
 
     entity "rh_empleado_org" : "TableModel"
@@ -69,13 +100,6 @@ model "alimentos y bebidas"
         @"ref_categoria" int ref:"rh_categoria_empleado" ["sys_pk"] 
         @"nss" string(50) 
     }
-    /* uod.rh_edo_civil */
-    entity "rh_edo_civil" : "EnumModel" {}
-    /* uod.rh_tipo_vivienda */
-    entity "rh_tipo_vivienda" : "EnumModel" {}
-    /* uod.rh_nvl_escolaridad */
-    entity "rh_nvl_escolaridad" : "EnumModel" {}
-    /* uod.rh_categoria_empleado */
     entity "rh_categoria_empleado" : "TableModel"
     {
         @"nombre" string(50) unique required
@@ -94,7 +118,9 @@ model "alimentos y bebidas"
     entity "gop_partida" :"TableModel"
 	{
 		@"ref_presupuesto" ref: "gop_presupuesto" required
+        @"id" string(36) required
 		@"padre" ref : "gop_partida"
+        @"status" ref:"gop_partida_status"
 		@"partida" string(255) required
 		index "gop_partida_unique1" unique
 		{
@@ -115,7 +141,6 @@ model "alimentos y bebidas"
 			field "ejercicio"
 		}
 	}
-    /* uod.rh_unidad_org */
     entity "rh_unidad_org" : "TableModel"
     {
         @"codigo" string(32) unique required
@@ -124,10 +149,7 @@ model "alimentos y bebidas"
         @"notas" string(4096) 
         @"link" string(1024) 
     }
-    entity "gop_presupuesto_status" : "EnumModel" {} // 1-Borrador, 2-Por aprobar, 3-Aprobado, 4-Cerrado
     //////////////////// entidades estrs +___
-
-    entity "cdocumentos" : "EnumModel" {}
     entity "chequera" : "TableModel"
     {
         @"clabe" string(18) unique
@@ -152,18 +174,6 @@ model "alimentos y bebidas"
             field "referencia"
         }
     }
-    ///reeg
-    entity "rhgf_ree_status":"EnumModel"
-    {
-        /*
-        0-Por aprobar
-        9-Rechazada
-        10-Aprobada
-        20-Pagada
-        99-Cancelada
-        */
-    }
-
     entity "rhgf_ree":"TableModel" //Reembolsos a empleados
     {
         @"ref_empleado" ref:"rh_empleado_org" required
@@ -229,5 +239,6 @@ model "alimentos y bebidas"
     {
         @"id" string(32) key
         @"title" string(255) required
+        @"view_url" string(1024)
     }
 }

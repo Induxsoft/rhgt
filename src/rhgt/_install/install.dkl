@@ -10,6 +10,7 @@ program "instalador"
     // Archivos de datos iniciales (Orden de importación)
     // deben estar en la carpeta _install/initial_data
     ref @files_to_import = from.json('[
+        "ctiposcategorias.csv",
         "categoria.csv",
         "ctasasiva.csv",
         "gop_presupuesto_status.csv",
@@ -39,49 +40,51 @@ program "instalador"
 
     if not(dbr.is_open(database)){ref database=dbr.open(qname)}
     do reconnect(database,qname)
-    do dbr.apps.itemtype.view_url(database,"DET07A","/!/rhgt/reeg/@_entity_id/",@true)
-
-    new src_reeg
+    
+    if dbr.str(database,"SHOW TABLES LIKE 'gop_src'",@null) != ""
     {
-        @"dte":"DET07A"
-        @"text":"Solicitud de reembolso a empleado"
-        @"qry_pending":"SELECT r.sys_guid,r.sys_pk,CONCAT_WS(' ',e.nombre,e.apellido1,e.apellido2)empleado,DATE_FORMAT(r.f_solicitud,'%Y-%m-%d')fecha_solicitud,
-                    r.concepto,rs.const 'status',r.importe_solicitado,r.importe_aprobado,
-                    ((ifnull(r.importe_aprobado,0) + ifnull(r.retiva,0) + ifnull(r.retisr,0)) - ifnull(r.iva,0))importe_neto_acto
-                    FROM rhgf_ree r
-                    INNER JOIN rh_empleado_org e ON r.ref_empleado=e.sys_pk
-                    INNER JOIN rhgf_ree_status rs ON r.`status`=rs.id
-                    where isnull(presupuestado) order by r.sys_pk desc limit 250"
+        do dbr.apps.itemtype.view_url(database,"DET07A","/!/rhgt/reeg/@_entity_id/",@true)
+        new src_reeg
+        {
+            @"dte":"DET07A"
+            @"text":"Solicitud de reembolso a empleado"
+            @"qry_pending":"SELECT r.sys_guid,r.sys_pk,CONCAT_WS(' ',e.nombre,e.apellido1,e.apellido2)empleado,DATE_FORMAT(r.f_solicitud,'%Y-%m-%d')fecha_solicitud,
+                        r.concepto,rs.const 'status',r.importe_solicitado,r.importe_aprobado,
+                        ((ifnull(r.importe_aprobado,0) + ifnull(r.retiva,0) + ifnull(r.retisr,0)) - ifnull(r.iva,0))importe_neto_acto
+                        FROM rhgf_ree r
+                        INNER JOIN rh_empleado_org e ON r.ref_empleado=e.sys_pk
+                        INNER JOIN rhgf_ree_status rs ON r.`status`=rs.id
+                        where isnull(presupuestado) order by r.sys_pk desc limit 250"
 
-        @"qry_select":"SELECT r.sys_guid,r.sys_pk,CONCAT_WS(' ',e.nombre,e.apellido1,e.apellido2)empleado,DATE_FORMAT(r.f_solicitud,'%Y-%m-%d')fecha_solicitud,
-                    r.concepto,rs.const 'status',r.importe_solicitado,r.importe_aprobado,
-                    ((ifnull(r.importe_aprobado,0) + ifnull(r.retiva,0) + ifnull(r.retisr,0)) - ifnull(r.iva,0))importe_neto_acto
-                    FROM rhgf_ree r
-                    INNER JOIN rh_empleado_org e ON r.ref_empleado=e.sys_pk
-                    INNER JOIN rhgf_ree_status rs ON r.`status`=rs.id
-                    where e.nombre like concat('%',@filter_text,'%') or 
-                    e.apellido1 like concat('%',@filter_text,'%') or 
-                    e.apellido2 like concat('%',@filter_text,'%') or 
-                    r.concepto like concat('%',@filter_text,'%') or
-                    r.sys_guid like concat('%',@filter_text,'%') 
-                      "
-        @"max_field":"importe_neto_acto"
-        @"ref_field":"sys_guid"
-        @"key_show":"sys_guid"
-        @"show_text":"empleado"
-        @"info_text":"concepto"
+            @"qry_select":"SELECT r.sys_guid,r.sys_pk,CONCAT_WS(' ',e.nombre,e.apellido1,e.apellido2)empleado,DATE_FORMAT(r.f_solicitud,'%Y-%m-%d')fecha_solicitud,
+                        r.concepto,rs.const 'status',r.importe_solicitado,r.importe_aprobado,
+                        ((ifnull(r.importe_aprobado,0) + ifnull(r.retiva,0) + ifnull(r.retisr,0)) - ifnull(r.iva,0))importe_neto_acto
+                        FROM rhgf_ree r
+                        INNER JOIN rh_empleado_org e ON r.ref_empleado=e.sys_pk
+                        INNER JOIN rhgf_ree_status rs ON r.`status`=rs.id
+                        where e.nombre like concat('%',@filter_text,'%') or 
+                        e.apellido1 like concat('%',@filter_text,'%') or 
+                        e.apellido2 like concat('%',@filter_text,'%') or 
+                        r.concepto like concat('%',@filter_text,'%') or
+                        r.sys_guid like concat('%',@filter_text,'%') 
+                        "
+            @"max_field":"importe_neto_acto"
+            @"ref_field":"sys_guid"
+            @"key_show":"sys_guid"
+            @"show_text":"empleado"
+            @"info_text":"concepto"
+        }
+        using src_reeg
+        {
+            @"sys_guid":uuid()
+            @"sys_recver":0
+            @"sys_dtcreated*":now()
+            @"sys_timestamp*":now()
+            @"sys_deleted":0
+        }
+        do dbr.apps.save(database,"gop_src",src_reeg)
+        do print("\nCreado operaciones por presupuestar: "+@@(src_reeg,"$dte")+" - "+@@(src_reeg,"$text"))
     }
-
-    using src_reeg
-    {
-        @"sys_guid":uuid()
-        @"sys_recver":0
-        @"sys_dtcreated*":now()
-        @"sys_timestamp*":now()
-        @"sys_deleted":0
-    }
-    do dbr.apps.save(database,"gop_src",src_reeg)
-    do print("\nCreado operaciones por presupuestar: "+@@(src_reeg,"$dte")+" - "+@@(src_reeg,"$text"))
 
     do dbr.close(database)
 }
